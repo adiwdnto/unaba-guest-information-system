@@ -1,0 +1,6 @@
+{
+  "name": "Campus Front-Desk Guest Registration",
+  "description": "Terminal mandiri ramah tablet pencatatan kehadiran pengunjung Universitas Anak Bangsa (UNABA) dengan antarmuka bahasa Indonesia sederhana dan tulisan besar.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
