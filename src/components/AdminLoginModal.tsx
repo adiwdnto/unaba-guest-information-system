@@ -17,26 +17,37 @@ export default function AdminLoginModal({ isOpen, onClose, onLoginSuccess }: Adm
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setIsSubmitting(true);
 
-    // Simulate front-desk check of credentials
-    setTimeout(() => {
-      if (
-        (username.trim().toLowerCase() === 'admin' && password === 'admin') ||
-        password === '2026' || password === '1234'
-      ) {
+    try {
+      const response = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: username.trim(),
+          password: password,
+        }),
+      });
+
+      if (response.ok) {
         onLoginSuccess();
         setUsername('');
         setPassword('');
         onClose();
       } else {
-        setError('Kredensial Ditolak. ID Pengguna atau Sandi Keamanan Salah.');
+        const data = await response.json().catch(() => ({}));
+        setError(data.error || 'Akses Ditolak. Nama Pengguna atau Kata Sandi Salah.');
       }
+    } catch (err) {
+      setError('Gagal menghubungkan ke server verifikasi.');
+    } finally {
       setIsSubmitting(false);
-    }, 800);
+    }
   };
 
   return (
@@ -70,15 +81,6 @@ export default function AdminLoginModal({ isOpen, onClose, onLoginSuccess }: Adm
 
           <form onSubmit={handleSubmit} className="p-6 md:p-8 space-y-6">
             
-            {/* Friendly Access Helper / Instruction */}
-            <div className="bg-indigo-50 border border-indigo-150 rounded-xl p-3.5 text-xs text-indigo-800 space-y-1">
-              <p className="font-bold flex items-center gap-1.5">🔑 Kredensial Staf Resepsionis:</p>
-              <p className="font-mono mt-1 text-slate-600">
-                Nama Pengguna: <span className="font-bold underline text-slate-800">admin</span><br />
-                Kata Sandi: <span className="font-bold underline text-slate-800">admin</span> atau Pin: <span className="font-bold underline text-slate-800">2026</span>
-              </p>
-            </div>
-
             {error && (
               <motion.div
                 initial={{ opacity: 0, y: -5 }}

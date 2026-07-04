@@ -30,8 +30,8 @@ export default function Dashboard({
   onAddManualGuest,
   onUpdateGuest,
 }: DashboardProps) {
-  // Tabs: 'ledger' (Guest List), 'analytics' (Reports & Charts), 'register' (Manual Add)
-  const [activeTab, setActiveTab] = useState<'ledger' | 'analytics' | 'register'>('ledger');
+  // Tabs: 'ledger' (Buku Tamu), 'analytics' (Metrik & Laporan)
+  const [activeTab, setActiveTab] = useState<'ledger' | 'analytics'>('ledger');
 
   // Modal CRUD states
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -68,8 +68,7 @@ export default function Dashboard({
   const [modalPhone, setModalPhone] = useState('');
   const [modalEmail, setModalEmail] = useState('');
   const [modalPurpose, setModalPurpose] = useState('');
-  const [modalOption, setModalOption] = useState<'partner' | 'none' | 'other'>('partner');
-  const [modalPartner, setModalPartner] = useState('');
+  const [modalOption, setModalOption] = useState<'none' | 'other'>('none');
   const [modalOtherInst, setModalOtherInst] = useState('');
   const [modalDateTime, setModalDateTime] = useState('');
   const [modalPassNumber, setModalPassNumber] = useState('');
@@ -82,16 +81,6 @@ export default function Dashboard({
   // Sort Fields
   const [sortField, setSortField] = useState<'dateTime' | 'name' | 'institution'>('dateTime');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
-
-  // Manual Register form state
-  const [manualName, setManualName] = useState('');
-  const [manualPhone, setManualPhone] = useState('');
-  const [manualEmail, setManualEmail] = useState('');
-  const [manualPurpose, setManualPurpose] = useState('');
-  const [manualOption, setManualOption] = useState<'partner' | 'none' | 'other'>('partner');
-  const [manualPartner, setManualPartner] = useState('');
-  const [manualOtherInst, setManualOtherInst] = useState('');
-  const [manualSuccessMessage, setManualSuccessMessage] = useState('');
 
   // COLORS for pie chart segments
   const COLORS = ['#4F46E5', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#3B82F6'];
@@ -139,37 +128,7 @@ export default function Dashboard({
     document.body.removeChild(link);
   };
 
-  // --- MANUAL VISIT SUBMUT ---
-  const handleManualSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!manualName.trim()) return;
 
-    const institutionName = 
-      manualOption === 'none' 
-        ? 'None' 
-        : manualOption === 'other' 
-          ? (manualOtherInst || 'Other') 
-          : (manualPartner || POPULAR_PARTNERS[0]);
-
-    onAddManualGuest({
-      name: manualName,
-      institution: institutionName,
-      institutionOption: manualOption,
-      phone: manualPhone || undefined,
-      email: manualEmail || undefined,
-      purpose: manualPurpose || 'Manual Staff Register',
-    });
-
-    const registeredName = manualName;
-    setManualName('');
-    setManualPhone('');
-    setManualEmail('');
-    setManualPurpose('');
-    setManualOtherInst('');
-    showToast(`Data pengunjung "${registeredName}" berhasil ditambahkan via Staff Register!`, 'success');
-    setManualSuccessMessage('Staff registered guest successfully!');
-    setTimeout(() => setManualSuccessMessage(''), 4000);
-  };
 
   // --- STATISTICS COMPUTING ---
   const statistics = useMemo(() => {
@@ -233,7 +192,6 @@ export default function Dashboard({
     setModalEmail('');
     setModalPurpose('');
     setModalOption('none');
-    setModalPartner('');
     setModalOtherInst('');
     const now = new Date();
     const localISO = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
@@ -251,15 +209,12 @@ export default function Dashboard({
     setModalPhone(guest.phone || '');
     setModalEmail(guest.email || '');
     setModalPurpose(guest.purpose || '');
-    setModalOption(guest.institutionOption || 'none');
+    setModalOption(guest.institutionOption === 'partner' ? 'other' : (guest.institutionOption || 'none'));
     if (guest.institutionOption === 'partner') {
-      setModalPartner(guest.institution);
-      setModalOtherInst('');
+      setModalOtherInst(guest.institution);
     } else if (guest.institutionOption === 'other') {
-      setModalPartner('');
       setModalOtherInst(guest.institution);
     } else {
-      setModalPartner('');
       setModalOtherInst('');
     }
     
@@ -281,9 +236,7 @@ export default function Dashboard({
     const institutionName = 
       modalOption === 'none' 
         ? 'Umum / Mandiri' 
-        : modalOption === 'other' 
-          ? (modalOtherInst || 'Lainnya') 
-          : (modalPartner || POPULAR_PARTNERS[0]);
+        : (modalOtherInst || 'Lainnya');
 
     const isoDateTime = modalDateTime ? new Date(modalDateTime).toISOString() : new Date().toISOString();
 
@@ -429,7 +382,7 @@ export default function Dashboard({
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              📖 Real-time Guest Ledger
+              📖 Buku Tamu Real-time
             </button>
             <button
               onClick={() => setActiveTab('analytics')}
@@ -439,17 +392,7 @@ export default function Dashboard({
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              📊 Metrics & Visual Reports
-            </button>
-            <button
-              onClick={() => setActiveTab('register')}
-              className={`px-4.5 py-2 rounded-xl text-xs font-bold font-mono uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${
-                activeTab === 'register'
-                  ? 'bg-indigo-600 text-white shadow-md'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              ➕ Staff Quick Register
+              📊 Metrik & Laporan Analisis
             </button>
           </div>
 
@@ -786,174 +729,7 @@ export default function Dashboard({
             </div>
           )}
 
-          {/* TAB 3: MANUAL QUICK REGISTER */}
-          {activeTab === 'register' && (
-            <div className="max-w-xl mx-auto py-4">
-              <form onSubmit={handleManualSubmit} className="space-y-6 bg-slate-50 p-6 md:p-8 rounded-3xl border border-slate-200">
-                <div className="space-y-1.5 border-b border-slate-205 border-slate-200 pb-4">
-                  <h4 className="text-lg font-extrabold text-slate-900">Front-Desk Manual Check-In</h4>
-                  <p className="text-slate-500 text-xs">Register walk-in guests manually on behalf of the visitor if they bypass the kiosk touchscreen terminal.</p>
-                </div>
 
-                {manualSuccessMessage && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.98 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="bg-emerald-50 border border-emerald-250 text-emerald-850 text-xs py-3 px-4 rounded-xl font-semibold flex items-center gap-2 text-emerald-900"
-                  >
-                    <CheckCircle className="w-4 h-4 text-emerald-600" />
-                    <span>{manualSuccessMessage}</span>
-                  </motion.div>
-                )}
-
-                {/* Form Fields */}
-                <div className="space-y-4">
-                  
-                  {/* Name field */}
-                  <div className="space-y-1">
-                    <label className="block text-xs font-mono font-bold text-slate-500 uppercase tracking-wider">
-                      Visitor Name *
-                    </label>
-                    <div className="relative">
-                      <User className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
-                      <input
-                        type="text"
-                        placeholder="Jane Smith"
-                        required
-                        value={manualName}
-                        onChange={(e) => setManualName(e.target.value)}
-                        className="w-full bg-white border border-slate-200 hover:border-slate-350 focus:border-indigo-600 focus:bg-white rounded-xl py-2.5 pl-10 pr-4 font-sans text-xs focus:outline-none transition-all font-semibold"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Institution Options Tri-Selector */}
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-mono font-bold text-slate-500 uppercase tracking-wider">
-                      Affiliation Type
-                    </label>
-                    <div className="flex gap-2 p-1 bg-slate-200/60 rounded-xl">
-                      {(['partner', 'none', 'other'] as const).map((opt) => (
-                        <button
-                          key={opt}
-                          type="button"
-                          onClick={() => setManualOption(opt)}
-                          className={`flex-1 py-1.5 text-center text-xs font-bold rounded-lg uppercase tracking-wide transition-all cursor-pointer ${
-                            manualOption === opt
-                              ? 'bg-white text-slate-900 shadow-sm font-extrabold'
-                              : 'text-slate-500 hover:text-slate-700'
-                          }`}
-                        >
-                          {opt}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Sub-inputs based on selection */}
-                  {manualOption === 'partner' && (
-                    <div className="space-y-1">
-                      <label className="block text-xs font-mono font-bold text-slate-500 uppercase tracking-wider">
-                        Select Academic Partner
-                      </label>
-                      <select
-                        value={manualPartner}
-                        onChange={(e) => setManualPartner(e.target.value)}
-                        required
-                        className="w-full bg-white border border-slate-250 text-slate-700 rounded-xl py-2.5 px-4 font-sans text-xs focus:outline-none focus:border-indigo-600 transition-all font-semibold"
-                      >
-                        <option value="">-- Choose Partner --</option>
-                        {POPULAR_PARTNERS.map(p => (
-                          <option key={p} value={p}>{p}</option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-
-                  {manualOption === 'other' && (
-                    <div className="space-y-1">
-                      <label className="block text-xs font-mono font-bold text-slate-500 uppercase tracking-wider">
-                        Specify Organization Name
-                      </label>
-                      <div className="relative">
-                        <Building className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
-                        <input
-                          type="text"
-                          placeholder="e.g. Oracle Lab, CERN Corporation"
-                          required
-                          value={manualOtherInst}
-                          onChange={(e) => setManualOtherInst(e.target.value)}
-                          className="w-full bg-white border border-slate-200 hover:border-slate-350 focus:border-indigo-600 focus:bg-white rounded-xl py-2.5 pl-10 pr-4 font-sans text-xs focus:outline-none transition-all font-semibold"
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Phone & Email contacts in 2 grid layout */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                      <label className="block text-xs font-mono font-bold text-slate-500 uppercase tracking-wider">
-                        Phone (Optional)
-                      </label>
-                      <div className="relative">
-                        <Phone className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-400" />
-                        <input
-                          type="tel"
-                          placeholder="+1 (555) 000-0000"
-                          value={manualPhone}
-                          onChange={(e) => setManualPhone(e.target.value)}
-                          className="w-full bg-white border border-slate-200 hover:border-slate-350 focus:border-indigo-600 focus:bg-white rounded-xl py-2.5 pl-10 pr-4 font-sans text-xs focus:outline-none transition-all font-semibold"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="block text-xs font-mono font-bold text-slate-500 uppercase tracking-wider">
-                        Email (Optional)
-                      </label>
-                      <div className="relative">
-                        <Mail className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-400" />
-                        <input
-                          type="email"
-                          placeholder="visitor@mail.com"
-                          value={manualEmail}
-                          onChange={(e) => setManualEmail(e.target.value)}
-                          className="w-full bg-white border border-slate-200 hover:border-slate-350 focus:border-indigo-600 focus:bg-white rounded-xl py-2.5 pl-10 pr-4 font-sans text-xs focus:outline-none transition-all font-semibold"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Visit Purpose selection */}
-                  <div className="space-y-1">
-                    <label className="block text-xs font-mono font-bold text-slate-500 uppercase tracking-wider">
-                      Visitor Purpose
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Audit meeting, Interview or lecture..."
-                      value={manualPurpose}
-                      onChange={(e) => setManualPurpose(e.target.value)}
-                      className="w-full bg-white border border-slate-200 hover:border-slate-350 focus:border-indigo-600 focus:bg-white rounded-xl py-2.5 px-4 font-sans text-xs focus:outline-none transition-all font-semibold"
-                    />
-                  </div>
-
-                </div>
-
-                {/* Confirm Register submission */}
-                <div className="pt-2 border-t border-slate-200 flex justify-end">
-                  <button
-                    type="submit"
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white font-mono uppercase text-xs font-bold tracking-wider py-3.5 px-6 rounded-xl shadow transition-all active:scale-95 cursor-pointer flex items-center gap-1.5"
-                  >
-                    <PlusCircle className="w-4 h-4" />
-                    <span>Register Walk-in Guest</span>
-                  </button>
-                </div>
-
-              </form>
-            </div>
-          )}
 
         </div>
       </div>
@@ -1026,17 +802,6 @@ export default function Dashboard({
                 <div className="flex gap-2">
                   <button
                     type="button"
-                    onClick={() => setModalOption('partner')}
-                    className={`flex-1 py-2 rounded-xl text-xs font-bold font-mono uppercase tracking-wider border transition-all cursor-pointer ${
-                      modalOption === 'partner'
-                        ? 'bg-indigo-600 border-indigo-600 text-white shadow-md'
-                        : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'
-                    }`}
-                  >
-                    Mitra Akademik
-                  </button>
-                  <button
-                    type="button"
                     onClick={() => setModalOption('none')}
                     className={`flex-1 py-2 rounded-xl text-xs font-bold font-mono uppercase tracking-wider border transition-all cursor-pointer ${
                       modalOption === 'none'
@@ -1044,7 +809,7 @@ export default function Dashboard({
                         : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'
                     }`}
                   >
-                    Umum / None
+                    Umum / Mandiri
                   </button>
                   <button
                     type="button"
@@ -1055,41 +820,22 @@ export default function Dashboard({
                         : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'
                     }`}
                   >
-                    Instansi Lain
+                    Instansi / Kampus Mitra
                   </button>
                 </div>
               </div>
 
-              {/* Conditional Inputs */}
-              {modalOption === 'partner' && (
-                <div className="space-y-1">
-                  <label className="block text-xs font-mono font-bold text-slate-500 uppercase tracking-wider">
-                    PILIH KAMPUS MITRA
-                  </label>
-                  <select
-                    value={modalPartner}
-                    onChange={(e) => setModalPartner(e.target.value)}
-                    className="w-full bg-white border border-slate-200 hover:border-slate-350 focus:border-indigo-600 focus:bg-white rounded-xl py-2.5 px-3 font-sans text-xs font-semibold focus:outline-none transition-all cursor-pointer"
-                  >
-                    <option value="">-- Pilih Kampus Mitra --</option>
-                    {POPULAR_PARTNERS.map((partner) => (
-                      <option key={partner} value={partner}>{partner}</option>
-                    ))}
-                  </select>
-                </div>
-              )}
-
               {modalOption === 'other' && (
                 <div className="space-y-1">
                   <label className="block text-xs font-mono font-bold text-slate-500 uppercase tracking-wider">
-                    Nama Instansi Kustom
+                    Nama Instansi / Kampus Mitra
                   </label>
                   <div className="relative">
                     <Building className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
                     <input
                       type="text"
                       required
-                      placeholder="Contoh: PT Anak Bangsa Tbk, Univ Terbuka"
+                      placeholder="Contoh: Universitas Bangka Belitung, PT Keren Tbk"
                       value={modalOtherInst}
                       onChange={(e) => setModalOtherInst(e.target.value)}
                       className="w-full bg-white border border-slate-200 hover:border-slate-350 focus:border-indigo-600 focus:bg-white rounded-xl py-2.5 pl-10 pr-4 font-sans text-xs focus:outline-none transition-all font-semibold"
